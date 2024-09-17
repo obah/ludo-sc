@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import "./NumberGenerator.sol";
 
 contract PlayLudo {
+    error INSUFFICIENT_PLAYERS();
+
     NumberGenerator public throwResult;
 
     uint public boardSize = 52;
@@ -20,20 +22,22 @@ contract PlayLudo {
     mapping(address => Player) public playerInfo;
 
     constructor(address[] memory _players) {
-        require(_players.length > 1, "At least two players are required");
+        require(_players.length > 1, "INSUFFICIENT_PLAYERS");
 
         players = _players;
         activePlayers = _players.length;
         throwResult = NumberGenerator(msg.sender);
 
         for (uint i = 0; i < _players.length; i++) {
+            require(_players[i] != address(0), "ADDRESS_ZERO");
+
             playerInfo[_players[i]] = Player(0, true);
         }
     }
 
-    function rollDice() public returns (uint) {
-        require(msg.sender == players[turn], "It's not your turn");
-        require(activePlayers > 1, "Game over");
+    function rollDice() external returns (uint) {
+        require(msg.sender == players[turn], "WRONG_TURN");
+        require(activePlayers > 1, "GAME_ENDED");
 
         uint diceRoll = throwResult.rollDice();
 
@@ -52,7 +56,7 @@ contract PlayLudo {
 
             if (player.position == 0) {
                 player.isActive = false;
-                activePlayers--;
+                activePlayers = activePlayers - 1;
                 winner = _player;
             }
         }
